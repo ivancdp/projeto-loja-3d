@@ -1771,7 +1771,7 @@ $('iaFechar').onclick=function(){try{$('iaVideo').pause();}catch(e){}$('ia').sty
 var ultimaFoto=null;
 $('iaVid').onclick=function(){
   if(!ultimaFoto||semGerador())return;
-  if(!confirm('Vou transformar esta foto num vídeo curto (5 segundos) andando pela loja. Leva de 2 a 5 minutos e gasta créditos do Higgsfield (bem mais que uma foto). Continuar?'))return;
+  if(!confirm('Vou transformar esta foto num vídeo curto (5 segundos) andando pela loja. Leva de 2 a 5 minutos e gasta cerca de 22 créditos do Higgsfield (uma foto gasta 2). Continuar?'))return;
   iaTela('Gerando o vídeo. Leva de 2 a 5 minutos, não feche a página.',true);
   fetch('api/video?f='+encodeURIComponent(ultimaFoto),{method:'POST',body:'x'}).then(function(r){return r.json();}).then(function(j){
     if(!j.ok){iaTela('Não deu certo: '+(j.erro||'erro desconhecido'),false);return;}
