@@ -180,6 +180,7 @@
   <button id="bPDF" class="largo primario">Gerar proposta em PDF</button>
   <button id="bIA" class="largo primario">Gerar foto realista (IA)</button>
   <button id="bIA3" class="largo">Gerar 3 fotos para a proposta (IA)</button>
+  <button id="bVidLoja" class="largo">Gerar vídeo da loja inteira (IA)</button>
   <button id="bAD" class="largo primario">Antes e depois (foto do espaço)</button>
   <input type="file" id="fFotoEspaco" accept="image/*" hidden>
   <button id="bFoto" class="largo">Baixar imagem 3D desta vista</button>
@@ -1215,6 +1216,14 @@ function texFaixa(){
 function plano(m,w,h,x,y,z,rx,ry){var o=new THREE.Mesh(geoPlano,m);o.scale.set(w,h,1);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,0);grupoSala.add(o);return o;}
 var matPiso=null,matFaixa=null,logoImg=null;
 function carregaLogo(){logoImg=null;if(!estado.logo)return;var im=new Image();im.onload=function(){logoImg=im;refazerSala();};im.src=estado.logo;}
+// Versão grátis: "VERSÃO GRÁTIS" pintado no piso, nas paredes e na casca externa, para a marca fazer parte da loja
+var texMarcaBase=null,texsMarca=[];
+function matMarcaCena(w,h){
+  if(!texMarcaBase){var c=tela2d(512,256),g=c.getContext('2d');g.translate(256,128);g.rotate(-0.32);g.font='900 58px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';
+    g.lineWidth=5;g.strokeStyle='rgba(0,0,0,.34)';g.strokeText('VERSÃO GRÁTIS',0,0);g.fillStyle='rgba(255,255,255,.5)';g.fillText('VERSÃO GRÁTIS',0,0);texMarcaBase=texDe(c,true);}
+  var t=texMarcaBase.clone();t.needsUpdate=true;t.repeat.set(Math.max(0.4,w/1.5),Math.max(0.4,h/0.75));texsMarca.push(t);
+  return new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false});
+}
 function tetoVis(){grupoSala.traverse(function(o){if(o.userData.teto||o.userData.soAndar)o.visible=(modo==='andar');if(o.userData.soPlanta)o.visible=(modo==='planta');});grupoFora.visible=(modo==='fora');cena.background.set(modo==='fora'?0xbcd9ee:0x12151b);}
 var grupoFora=new THREE.Group();grupoFora.visible=false;cena.add(grupoFora);
 var orbF={yaw:0.4,pitch:0.2,dist:11},texsFora=[],texOnd=null,matSolo=null;
@@ -1237,6 +1246,7 @@ function refazerFora(){
   var matPele=M(0xffffff,{roughness:ct?0.5:0.9,metalness:ct?0.25:0});matPele.color.set(estado.espaco.corFora).convertSRGBToLinear();
   var matQuina=M(0xffffff,{roughness:0.6});matQuina.color.set(estado.espaco.corFora).convertSRGBToLinear().multiplyScalar(0.7);
   function pele(g,w,h,x,y){if(w<=0.005||h<=0.005)return;var m=matPele;
+    if(comMarca()&&w>0.6&&h>0.6){var om=new THREE.Mesh(geoPlano,matMarcaCena(w,h));om.scale.set(w,h,1);om.position.set(x,y,-e-0.004);om.rotation.y=Math.PI;g.add(om);}
     if(ct){m=matPele.clone();var t=texOnd.clone();t.needsUpdate=true;t.repeat.set(Math.max(1,w/0.64),1);m.map=t;texsFora.push(t);}
     var o=new THREE.Mesh(geoPlano,m);o.scale.set(w,h,1);o.position.set(x,y,-e);o.rotation.y=Math.PI;o.receiveShadow=true;g.add(o);}
   var principal=entradas()[0];
@@ -1290,6 +1300,8 @@ function refazerSala(){
   [mat.pFundo,mat.pEsq,mat.pDir,mat.pFrente].forEach(function(m,i){var ct=estado.espaco.tipo!=='sala';if(ct&&!m.map){m.map=texOnd.clone();m.map.needsUpdate=true;}if(!ct&&m.map){m.map.dispose();m.map=null;}if(m.map)m.map.repeat.set((i===0||i===3?L:P)/0.5,1);m.needsUpdate=true;});
   var tp=texPiso(estado.piso),tm=TAM_PISO[estado.piso]||1;tp.repeat.set(L/tm,P/tm);matPiso=M(0xffffff,{map:tp,roughness:BRILHO_PISO[estado.piso]||0.55});
   plano(matPiso,L,P,0,0,0,-Math.PI/2).receiveShadow=true;
+  texsMarca.forEach(function(t){t.dispose();});texsMarca=[];
+  if(comMarca())plano(matMarcaCena(L,P),L,P,0,0.004,0,-Math.PI/2).raycast=function(){};
   plano(mat.teto,L,P,0,A,0,Math.PI/2);
   ajustaPortas();
   var mats=[mat.pFundo,mat.pEsq,mat.pFrente,mat.pDir],rd=0.08;
@@ -1328,10 +1340,10 @@ function refazerSala(){
     var ps=portasDe(k).map(function(p){var pp=portaPos(p);return {p:p,px:(k===0||k===3)?pp:-pp};}).sort(function(a,b){return a.px-b.px;}),cur=-comp/2;
     ps.forEach(function(q){
       var w=portaLarg(q.p),pa=q.px-w/2,pb=q.px+w/2;
-      if(pa-cur>0.01){pl(wg,mats[k],pa-cur,A,(pa+cur)/2,A/2,0);cx(wg,pa-cur,rd,0.015,mat.preto,(pa+cur)/2,rd/2,0.008);}
+      if(pa-cur>0.01){pl(wg,mats[k],pa-cur,A,(pa+cur)/2,A/2,0);if(comMarca())pl(wg,matMarcaCena(pa-cur,A),pa-cur,A,(pa+cur)/2,A/2,0.004);cx(wg,pa-cur,rd,0.015,mat.preto,(pa+cur)/2,rd/2,0.008);}
       var ph=portaAlt(q.p);pl(wg,mats[k],w,A-ph,q.px,ph+(A-ph)/2,0);porta(wg,q.px,q.p);cur=pb;
     });
-    if(comp/2-cur>0.01){pl(wg,mats[k],comp/2-cur,A,(comp/2+cur)/2,A/2,0);cx(wg,comp/2-cur,rd,0.015,mat.preto,(comp/2+cur)/2,rd/2,0.008);}
+    if(comp/2-cur>0.01){pl(wg,mats[k],comp/2-cur,A,(comp/2+cur)/2,A/2,0);if(comMarca())pl(wg,matMarcaCena(comp/2-cur,A),comp/2-cur,A,(comp/2+cur)/2,A/2,0.004);cx(wg,comp/2-cur,rd,0.015,mat.preto,(comp/2+cur)/2,rd/2,0.008);}
     grupoSala.add(wg);
   }
   if(estado.faixa){matFaixa=new THREE.MeshStandardMaterial({map:texFaixa(),roughness:0.7});plano(matFaixa,L,0.55,0,A-0.275,-P/2+0.006);}
@@ -1793,7 +1805,7 @@ function fotoIA(){ // fotografa a vista atual; devolve Promise com a resposta do
 // versão publicada na internet não tem gerador de fotos (ele usa os créditos do Higgsfield e só roda no computador)
 var temGerador=null;
 if(location.protocol!=='file:')fetch('api/ping').then(function(r){return r.ok?r.json():null;}).then(function(j){temGerador=!!(j&&j.ok);marcaIA();}).catch(function(){temGerador=false;marcaIA();});
-function marcaIA(){if(temGerador!==false)return;['bIA','bIA3','bAD'].forEach(function(id){var b=$(id);if(b&&b.textContent.indexOf('só no computador')<0){b.textContent+=' (só no computador)';b.classList.remove('primario');}});}
+function marcaIA(){if(temGerador!==false)return;['bIA','bIA3','bAD','bVidLoja'].forEach(function(id){var b=$(id);if(b&&b.textContent.indexOf('só no computador')<0){b.textContent+=' (só no computador)';b.classList.remove('primario');}});}
 function semGerador(){
   if(location.protocol!=='file:'&&temGerador===false){alert('A foto por IA só funciona na versão que roda no computador, porque usa os créditos do Higgsfield. Nesta versão online você monta a loja, anda por ela e gera a proposta e a planta elétrica. Para levar um projeto de um aparelho para outro, use "Salvar projeto em arquivo" e "Abrir projeto salvo".');return true;}
   if(location.protocol!=='file:')return false;
@@ -1828,6 +1840,49 @@ function tresFotos(){
   })();
 }
 $('bIA3').onclick=tresFotos;
+// Vídeo da loja inteira: filma um giro completo no 3D, do meio da loja, e a IA refaz o filme com cara de real seguindo o mesmo movimento
+function pontoCentral(){
+  var a6=alcance(0.30)||function(){return true;},m=null,md=1e9,x,z;
+  for(x=-estado.L/2+0.3;x<=estado.L/2-0.3;x+=0.1)for(z=-estado.P/2+0.3;z<=estado.P/2-0.3;z+=0.1)if(a6(x,z)){var d=x*x+z*z;if(d<md){md=d;m=[x,z];}}
+  return m||[0,0];
+}
+function inventarioTotal(){
+  var t=contagem().map(function(o){return o.qtd+' x '+o.nome;}).join('; ');
+  var en=[];var vistos={};estado.itens.forEach(function(i){var c=CATALOGO[i.tipo];if(!vistos[i.tipo]){vistos[i.tipo]=0;en.push(i.tipo);}vistos[i.tipo]++;});
+  return en.map(function(k){return vistos[k]+' x '+CATALOGO[k].en;}).join('; ');
+}
+var SEG_VIDEO=10,QPS=12;
+function videoLoja(){
+  if(semGerador())return;
+  if(!confirm('Vou filmar um giro completo pela loja no 3D e pedir para a IA refazer com cara de filmagem real ('+SEG_VIDEO+' segundos). Leva de 5 a 10 minutos e gasta cerca de '+Math.round(SEG_VIDEO*4.5+2)+' créditos do Higgsfield. Continuar?'))return;
+  setModo('andar');var p=pontoCentral(),en=entrada(entradas()[0],0.45),y0=en.yaw,N=SEG_VIDEO*QPS,i=0,sid='g'+Date.now().toString(36);
+  var c=tela2d(1280,720),g=c.getContext('2d'),fotos=[];
+  // a IA copia a aparência das fotos realistas DESTE projeto; se ainda não houver nenhuma, tira uma da entrada antes de filmar
+  function filmar(){
+    fotos=fotosIA.slice(-3).map(function(u){return u.replace(location.origin+'/','');});
+    setModo('andar');and.x=p[0];and.z=p[1];and.pitch=-0.04;cam.fov=88;cam.updateProjectionMatrix();
+    iaTela('Filmando a loja em 3D (etapa 1 de 2).',true);prox();
+  }
+  if(fotosIA.length)setTimeout(filmar,0);
+  else{iaTela('Tirando uma foto realista de referência antes de filmar.',true);fotoIA().then(function(j){if(!j.ok){iaTela('Não deu certo: '+(j.erro||'erro desconhecido'),false);return;}filmar();});}
+  function prox(){
+    if(i>=N){
+      cam.fov=72;cam.updateProjectionMatrix();
+      iaTela('A IA está refazendo o filme com cara de real (etapa 2 de 2). Leva alguns minutos, não feche a página.',true);
+      fetch('api/video-loja?s='+sid+'&seg='+SEG_VIDEO+'&qps='+QPS+'&f='+encodeURIComponent(fotos.join(','))+'&inv='+encodeURIComponent(inventarioTotal()),{method:'POST',body:'x'}).then(function(r){return r.json();}).then(function(j){
+        if(!j.ok){iaTela('Não deu certo: '+(j.erro||'erro desconhecido'),false);return;}
+        iaTela('Vídeo da loja pronto. Ficou salvo na pasta "renders" do projeto.',false);
+        var v=$('iaVideo');v.src=j.arquivo;v.hidden=false;v.play().catch(function(){});
+        $('iaAbrir').hidden=false;$('iaAbrir').href=j.arquivo;$('iaBaixar').hidden=false;$('iaBaixar').href=j.arquivo;$('iaBaixar').download='video-loja-'+slug()+'.mp4';
+      }).catch(function(){iaTela('Não consegui falar com o gerador.',false);});
+      return;
+    }
+    and.yaw=y0+i/N*Math.PI*2;desenhar();
+    var s=Math.max(1280/cv.width,720/cv.height),w=cv.width*s,h=cv.height*s;g.drawImage(cv,(1280-w)/2,(720-h)/2,w,h);
+    c.toBlob(function(b){fetch('api/quadro?s='+sid+'&i='+i,{method:'POST',body:b}).then(function(r){return r.json();}).then(function(j){if(!j.ok)throw 0;i++;if(i%12===0)$('iaMsg').textContent='Filmando a loja em 3D (etapa 1 de 2): '+Math.round(100*i/N)+'%.';prox();}).catch(function(){iaTela('Não consegui enviar o filme para o gerador.',false);});},'image/jpeg',0.86);
+  }
+}
+$('bVidLoja').onclick=videoLoja;
 $('bIA').onclick=gerarFoto;$('iaDeNovo').onclick=gerarFoto;
 $('bAD').onclick=function(){
   if(semGerador())return;
@@ -2015,7 +2070,7 @@ if(soVer){
     dica('Arraste para girar. Use os botões acima para andar pela loja.');
   }).catch(function(){soVer=false;document.body.classList.remove('ver');aplicaMarca();alert('Este link de projeto está incompleto ou foi cortado. Peça para enviarem de novo.');});
 }
-window.__loja={linkSindico:linkSindico,exporta:exporta,comMarca:comMarca,layoutAuto:layoutAuto,recorteRet:recorteRet,orbF:orbF,modeloContainer:modeloContainer,vistasPadrao:vistasPadrao,pontosLuz:pontosLuz,interruptor:interruptor,desfazer:desfazer,cobertura:cobertura,pilha:function(){return pilha.length;},plantaEletrica:plantaEletrica,acesso:function(){return acesso;},tomadas:tomadas,D:D,estreitos:estreitos,proposta:proposta,capturar:capturar,contagem:contagem,estado:function(){return estado;},and:and,orb:orb,setModo:setModo,tecla:tecla,desenhar:desenhar,inventario:inventario,colide:colide,mover:mover,adicionar:adicionar,selecionar:selecionar,girar:girar,refazer:tudo};
+window.__loja={videoLoja:videoLoja,pontoCentral:pontoCentral,linkSindico:linkSindico,exporta:exporta,comMarca:comMarca,layoutAuto:layoutAuto,recorteRet:recorteRet,orbF:orbF,modeloContainer:modeloContainer,vistasPadrao:vistasPadrao,pontosLuz:pontosLuz,interruptor:interruptor,desfazer:desfazer,cobertura:cobertura,pilha:function(){return pilha.length;},plantaEletrica:plantaEletrica,acesso:function(){return acesso;},tomadas:tomadas,D:D,estreitos:estreitos,proposta:proposta,capturar:capturar,contagem:contagem,estado:function(){return estado;},and:and,orb:orb,setModo:setModo,tecla:tecla,desenhar:desenhar,inventario:inventario,colide:colide,mover:mover,adicionar:adicionar,selecionar:selecionar,girar:girar,refazer:tudo};
 })();
 </script>
 </body>
