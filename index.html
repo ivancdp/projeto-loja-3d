@@ -46,6 +46,12 @@
   input[type=range]{width:100%;margin-top:6px}
   .cores{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
   .aviso{color:#ff8f8f}.atencao{color:#ffd23f}
+  #marca{position:absolute;inset:0;pointer-events:none;z-index:2;background-repeat:repeat;display:none}
+  #gratis{background:#3a2f0b;border:1px solid #7a6212;color:#ffe9a3;border-radius:8px;padding:9px 10px;font-size:12.5px;line-height:1.45;margin-bottom:12px;display:none}
+  #verBarra{position:absolute;top:10px;left:12px;z-index:4;background:rgba(20,24,32,.88);padding:8px 12px;border-radius:8px;font-size:13px;display:none;max-width:44%}
+  #verBarra b{display:block;font-size:15px}#verBarra a{color:#8ab4ff;font-size:12px}
+  body.ver #painel{display:none}body.ver #verBarra{display:block}
+  #iaVideo{max-width:100%;max-height:68vh;border-radius:8px}
   #alerta{position:absolute;top:62px;left:50%;transform:translateX(-50%);background:rgba(200,30,25,.95);color:#fff;padding:9px 16px;border-radius:8px;font-size:13.5px;font-weight:600;max-width:86%;text-align:center;z-index:3}
   #alerta.leve{background:rgba(190,130,0,.96)}
   #opItem label{margin-top:8px}
@@ -64,6 +70,7 @@
   <h1>Projeto da Loja</h1>
   <button id="bDesfazer" style="float:right;margin-top:-30px;padding:5px 10px;font-size:12px" disabled>↶ Desfazer</button>
   <p class="sub">Monte a loja na planta, depois ande por dentro.</p>
+  <div id="gratis"><b>Versão grátis.</b> Imagens, proposta, planta elétrica e o link para o síndico saem com marca d'água. A versão completa tira a marca e libera a foto realista por IA.</div>
 
   <label>Nome da loja
     <input type="text" id="fNome" maxlength="28">
@@ -131,6 +138,9 @@
   <div id="portas"></div>
   <button id="bPortaAdd" class="largo">+ Adicionar porta ou vitrine</button>
 
+  <h2>Layout automático</h2>
+  <button id="bAuto" class="largo primario">Sugerir layout para este espaço</button>
+
   <h2>Adicionar equipamento</h2>
   <div class="grade" id="catalogo"></div>
 
@@ -166,6 +176,7 @@
   </div>
 
   <h2>Projeto</h2>
+  <button id="bLink" class="largo primario">Link para o síndico ver a loja em 3D</button>
   <button id="bPDF" class="largo primario">Gerar proposta em PDF</button>
   <button id="bIA" class="largo primario">Gerar foto realista (IA)</button>
   <button id="bIA3" class="largo">Gerar 3 fotos para a proposta (IA)</button>
@@ -186,6 +197,8 @@
     <button data-modo="andar">Andar pela loja</button>
     <button data-modo="fora">Vista de fora</button>
   </div>
+  <div id="marca"></div>
+  <div id="verBarra"><b id="verNome"></b><span id="verCond"></span><br><a id="verCta" target="_blank" rel="noopener">Feito no Projeto da Loja 3D</a></div>
   <div id="alerta" hidden></div>
   <div id="dica"></div>
   <div id="ia">
@@ -194,7 +207,8 @@
       <figure id="iaFig3d"><img id="iaImg3d" alt="Vista 3D enviada"><figcaption>Seu projeto (3D)</figcaption></figure>
       <figure><img id="iaImg" alt="Foto realista da loja"><figcaption>Foto gerada. Confira se cada item está no lugar.</figcaption></figure>
     </div>
-    <div class="acoes"><button id="iaDeNovo" hidden>Gerar de novo</button><a id="iaAbrir" target="_blank" hidden><button>Abrir em tamanho real</button></a><a id="iaBaixar" hidden><button class="primario">Baixar foto</button></a><button id="iaFechar" hidden>Fechar</button></div>
+    <video id="iaVideo" controls loop playsinline hidden></video>
+    <div class="acoes"><button id="iaDeNovo" hidden>Gerar de novo</button><button id="iaVid" hidden>Gerar vídeo desta foto</button><a id="iaAbrir" target="_blank" hidden><button>Abrir em tamanho real</button></a><a id="iaBaixar" hidden><button class="primario">Baixar foto</button></a><button id="iaFechar" hidden>Fechar</button></div>
   </div>
   <div id="dpad">
     <span></span><button data-k="frente">▲</button><span></span>
@@ -253,6 +267,14 @@ var CATALOGO={
   gondola:{nome:'Gôndola OSB (central)',en:'low double-sided OSB wood gondola with slanted shelves',w:1.0,d:0.8,h:1.5,placa:1},
   gondolaMetal:{nome:'Gôndola de metal (parede)',en:'black steel single-sided supermarket gondola with perforated back panel and flat metal shelves with price strips',w:0.92,d:0.42,h:1.7,placa:1,semPlaca:1},
   gondolaMetalC:{nome:'Gôndola de metal (central)',en:'black steel double-sided supermarket gondola with flat metal shelves and price strips',w:0.92,d:0.8,h:1.5,placa:1,semPlaca:1},
+  pontaMetal:{nome:'Ponta de gôndola (metal)',en:'black steel gondola end-cap with flat metal shelves',w:0.8,d:0.37,h:1.5,placa:1,semPlaca:1},
+  gondolaCanto:{nome:'Gôndola de canto (metal)',en:'black steel corner gondola with quarter-round shelves',w:0.7,d:0.7,h:1.7},
+  salgadinho:{nome:'Expositor de salgadinho',en:'black wire snack display rack full of chip bags',w:0.6,d:0.45,h:1.7,placa:1,txtPadrao:'SNACKS'},
+  painelPerf:{nome:'Painel perfurado com ganchos',en:'white pegboard wall panel with hooks holding small hanging products',w:1.0,d:0.14,h:2.0,parede:1},
+  adega:{nome:'Adega de vinhos',en:'wooden wine rack with bottles lying on the shelves',w:0.9,d:0.4,h:1.9,placa:1,txtPadrao:'VINHOS'},
+  paes:{nome:'Expositor de pães',en:'wooden bakery display with slanted trays of packaged bread',w:0.9,d:0.5,h:1.4,placa:1,txtPadrao:'PADARIA'},
+  ilha:{nome:'Ilha de congelados',en:'white island chest freezer with sliding glass lids',w:1.8,d:0.9,h:0.9},
+  carvao:{nome:'Suporte de carvão',en:'black metal rack stacked with charcoal bags',w:0.8,d:0.5,h:1.2},
   geladeira:{nome:'Geladeira de bebidas',en:'glass-door beverage refrigerator',mods:GEL,ops:[{campo:'mod',rotulo:'Modelo',valores:nomes(GEL)},{campo:'cor',rotulo:'Cor',valores:CORES_GEL}]},
   cervejeira:{nome:'Cervejeira',en:'beer cooler',mods:CERV,ops:[{campo:'mod',rotulo:'Modelo',valores:nomes(CERV)},{campo:'tema',rotulo:'Tema (adesivo)',valores:nomes(TEMAS)}]},
   freezer:{nome:'Freezer de sorvete',en:'red ice cream chest freezer with glass lid',mods:FRZ,ops:[{campo:'mod',rotulo:'Modelo',valores:nomes(FRZ)}]},
@@ -371,6 +393,7 @@ function validar(o){
 function carregar(){try{return validar(JSON.parse(localStorage.getItem(CHAVE)||localStorage.getItem(CHAVE_ANT)));}catch(e){return null;}}
 var pilha=[],ultimoJSON=null,ultimoPush=0,desfazendo=false;
 function salvar(){
+  if(soVer)return; // quem abre pelo link só olha: não grava nada
   var j=JSON.stringify(estado),t=Date.now();
   if(!desfazendo&&ultimoJSON&&j!==ultimoJSON){if(t-ultimoPush>700){pilha.push(ultimoJSON);if(pilha.length>50)pilha.shift();}ultimoPush=t;}
   ultimoJSON=j;try{localStorage.setItem(CHAVE,j);}catch(e){}
@@ -381,6 +404,37 @@ function desfazer(){
   if(!o)return;desfazendo=true;estado=o;selecionar(null);tudo();desfazendo=false;
 }
 
+var PUBLICO='https://ivancdp.github.io/projeto-loja-3d/';
+// Completa (sem marca d'água) só na versão do computador. Online é a versão grátis. "?gratis=1" força a grátis para conferir.
+var PRO=(location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:')&&!/[?&]gratis=1/.test(location.search);
+var soVer=location.hash.indexOf('#ver=')===0,verPro=false; // aberto pelo link do síndico: só olhar
+function comMarca(){return soVer?!verPro:!PRO;}
+var TXT_MARCA='VERSÃO GRÁTIS · PROJETO DA LOJA 3D';
+function marcaURI(claro){
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="460" height="250"><text x="230" y="125" font-family="Arial,sans-serif" font-size="25" font-weight="700" text-anchor="middle" transform="rotate(-24 230 125)" fill="'+(claro?'rgba(255,255,255,.42)':'rgba(0,0,0,.16)')+'" stroke="'+(claro?'rgba(0,0,0,.3)':'rgba(255,255,255,.2)')+'" stroke-width="0.8">'+TXT_MARCA+'</text></svg>';
+  return 'url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)+'")';
+}
+function marcaCSS(){return comMarca()?'<style>body::before{content:"";position:fixed;inset:0;z-index:99;pointer-events:none;background-image:'+marcaURI(false)+';background-repeat:repeat;-webkit-print-color-adjust:exact;print-color-adjust:exact}.gratis{background:#fff3c4;border:1px solid #d9b93a;padding:8px 12px;font-size:13px;margin-bottom:14px}</style>':'';}
+function marcaHTML(){return comMarca()?'<div class="gratis">Documento gerado na <b>versão grátis</b> do Projeto da Loja 3D. A versão completa sai sem marca d\'água.</div>':'';}
+// imagem da tela para exportar, já com a marca d'água quando for a versão grátis
+function exporta(mime,q){
+  if(!comMarca())return cv.toDataURL(mime,q);
+  var c=tela2d(cv.width,cv.height),g=c.getContext('2d'),t=Math.round(cv.width/26);g.drawImage(cv,0,0);
+  g.rotate(-0.42);g.font='bold '+t+'px Arial,sans-serif';g.textAlign='center';g.fillStyle='rgba(255,255,255,.42)';g.strokeStyle='rgba(0,0,0,.3)';g.lineWidth=Math.max(1,t/28);
+  for(var y=-cv.height;y<cv.height*2.2;y+=t*5.2)for(var x=-cv.width;x<cv.width*2;x+=t*19){g.fillText(TXT_MARCA,x,y);g.strokeText(TXT_MARCA,x,y);}
+  return c.toDataURL(mime,q);
+}
+// link para o síndico: o projeto vai dentro do próprio endereço, compactado
+function b64u(b){var t='';for(var i=0;i<b.length;i+=8192)t+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(t).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function deb64u(t){t=t.replace(/-/g,'+').replace(/_/g,'/');var x=atob(t),b=new Uint8Array(x.length);for(var i=0;i<x.length;i++)b[i]=x.charCodeAt(i);return b;}
+function compactar(txt){var by=new TextEncoder().encode(txt);if(!window.CompressionStream)return Promise.resolve('j'+b64u(by));
+  return new Response(new Blob([by]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function(b){return 'z'+b64u(new Uint8Array(b));});}
+function descompactar(p){var by=deb64u(p.slice(1));if(p[0]==='j')return Promise.resolve(new TextDecoder().decode(by));
+  return new Response(new Blob([by]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();}
+function linkSindico(base){
+  var e=JSON.parse(JSON.stringify(estado));e.logo='';e.pro=PRO;e.itens.forEach(function(i){i.x=Math.round(i.x*100)/100;i.z=Math.round(i.z*100)/100;});
+  return compactar(JSON.stringify(e)).then(function(p){return (base||PUBLICO)+'#ver='+p;});
+}
 var estado=null;estado=carregar()||modelo();
 // Aberta como arquivo (dois cliques no index.html): se o gerador estiver ligado, pula sozinha para o endereço certo e leva o projeto junto.
 var SERVIDOR='http://localhost:3478/';
@@ -428,6 +482,11 @@ function texMadeira(){
     var w=6+r()*22,h=2+r()*6;g.save();g.translate(r()*256,r()*256);g.rotate((r()-0.5)*1.2);g.fillRect(-w/2,-h/2,w,h);g.restore();}
   return texDe(c,true);
 }
+function texFuradoClaro(){
+  var c=tela2d(64,64),g=c.getContext('2d');g.fillStyle='#f1f1ee';g.fillRect(0,0,64,64);g.fillStyle='#8f9396';
+  for(var y=0;y<4;y++)for(var x=0;x<4;x++){g.beginPath();g.arc(8+x*16,8+y*16,2.2,0,6.3);g.fill();}
+  return texDe(c,true);
+}
 function texFurado(){
   var c=tela2d(64,64),g=c.getContext('2d');g.fillStyle='#1c1d21';g.fillRect(0,0,64,64);g.fillStyle='#050506';
   for(var y=0;y<4;y++)for(var x=0;x<4;x++){g.beginPath();g.arc(8+x*16,8+y*16,2.6,0,6.3);g.fill();}
@@ -466,10 +525,13 @@ var mat={
   vermelho:M(0xcc0f1a,{roughness:0.35}), folhas:M(0xffffff,{map:texFolhas(),roughness:1}),
   vidroFora:M(0x2a3a48,{roughness:0.1,metalness:0.3}),
   pilar:M(0xe9e7e2,{roughness:0.95}), portaMad:M(0x8a6a4a,{roughness:0.6}), vidroPorta:M(0xdcecf4,{transparent:true,opacity:0.22,roughness:0.05,depthWrite:false,side:THREE.DoubleSide}),
+  pao:M(0xd9a45b,{roughness:0.8}), paoEscuro:M(0x9c6a32,{roughness:0.8}), saco:M(0x9a7b55,{roughness:0.9}),
+  vinhoA:M(0x1d3b24,{roughness:0.25}), vinhoB:M(0x3a0d18,{roughness:0.25}), capsula:M(0xb8962e,{roughness:0.3,metalness:0.6}),
   cinza:M(0x3c4046,{roughness:0.6}), cinzaClaro:M(0xb4b8bd,{roughness:0.5}), amarelo:M(0xf2c200,{roughness:0.5}),
   base:M(0x3a4150), sel:new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:0.55,depthWrite:false}),
   selErro:new THREE.MeshBasicMaterial({color:0xff3b30,transparent:true,opacity:0.6,depthWrite:false})
 };
+var texPeg=null;
 var matsProd=CORES_EMB.map(function(c,i){return M(0xffffff,{map:texEmb(c,i),roughness:0.5});});
 var matsProd6=matsProd.map(function(m,i){var t=M(parseInt(CORES_EMB[i].slice(1),16),{roughness:0.6});return [m,m,t,t,m,m];});
 var liso=function(c,e){return M(c,e||{roughness:0.3});};
@@ -543,7 +605,7 @@ function placa(g,w,nome,y,z,ry){var o=new THREE.Mesh(geoPlano,matSecao(nome));o.
 function textoPlaca(it,r){
   var sorteio=SECOES[Math.floor(r()*SECOES.length)],c=CATALOGO[it.tipo];
   if(typeof it.txt==='string')return it.txt.trim().toUpperCase();
-  return c.semPlaca?'':sorteio;
+  return c.txtPadrao!==undefined?c.txtPadrao:(c.semPlaca?'':sorteio);
 }
 // corpo em cunha (perfil lateral), frente em +z. devolve dados da face inclinada
 function cunha(g,w,d,hf,h,topo,m,x,y,z){
@@ -762,6 +824,79 @@ var construir={
   },
   quadro:function(g,c){var zb=-c.d/2;cx(g,c.w,0.45,0.09,mat.cinzaClaro,0,1.5,zb+0.045);cx(g,c.w-0.06,0.39,0.01,mat.prat,0,1.5,zb+0.094);cx(g,0.03,0.06,0.02,mat.preto,c.w/2-0.06,1.5,zb+0.1);},
   lixeira:function(g){cil(g,0.28,0.42,mat.cinza,0,0.21,0);cil(g,0.3,0.05,mat.preto,0,0.445,0);},
+  pontaMetal:function(g,c,r,it){construir.gondolaMetal(g,c,r,it);},
+  gondolaCanto:function(g,c,r){
+    var w=c.w,h=c.h,x0=-w/2,z0=-c.d/2,R=w-0.04;
+    function quarto(raio,esp,m,y){var o=new THREE.Mesh(new THREE.CylinderGeometry(raio,raio,esp,22,1,false,0,Math.PI/2),m);o.userData.proprio=true;o.position.set(x0,y,z0);g.add(o);return o;}
+    quarto(R,0.14,mat.metalPreto,0.07);
+    cx(g,w,h-0.14,0.012,mat.metalPreto,0,0.14+(h-0.14)/2,z0+0.006);cx(g,0.012,h-0.14,c.d,mat.metalPreto,x0+0.006,0.14+(h-0.14)/2,0);
+    cx(g,0.04,h,0.04,mat.metalPreto,x0+0.02,h/2,z0+0.02);cx(g,0.04,h,0.04,mat.metalPreto,w/2-0.02,h/2,z0+0.02);cx(g,0.04,h,0.04,mat.metalPreto,x0+0.02,h/2,c.d/2-0.02);
+    [0.15,0.5,0.82,1.14,1.44].forEach(function(y,i){
+      var rr=i?R-0.1:R-0.02;if(i)quarto(rr,0.02,mat.metalPreto,y);
+      for(var a=0;a<5;a++){var th=(0.2+a*0.29),ro=rr-0.12,m=matsProd6[Math.floor(r()*matsProd6.length)],hh=0.14+r()*0.1;
+        var p=cx(g,0.1,hh,0.07,m,x0+ro*Math.sin(th),y+0.01+hh/2,z0+ro*Math.cos(th));p.rotation.y=th;}
+    });
+  },
+  salgadinho:function(g,c,r,it){
+    var w=c.w,d=c.d,h=c.h,sec=textoPlaca(it,r);
+    [-1,1].forEach(function(sx){cx(g,0.02,h,0.02,mat.preto,sx*(w/2-0.01),h/2,-d/2+0.01);cx(g,0.02,h*0.72,0.02,mat.preto,sx*(w/2-0.01),h*0.36,d/2-0.01);cx(g,0.02,0.02,d,mat.preto,sx*(w/2-0.01),0.02,0);cx(g,0.02,0.02,d,mat.preto,sx*(w/2-0.01),h*0.72,0);});
+    cx(g,w,0.22,0.02,mat.vermelho,0,h-0.11,-d/2+0.02);
+    if(sec){var pl2=new THREE.Mesh(geoPlano,matTxt(sec,'#cc0f1a','#ffffff',256,64,34));pl2.scale.set(w-0.04,(w-0.04)*64/256,1);pl2.position.set(0,h-0.11,-d/2+0.031);pl2.userData.semSombra=true;g.add(pl2);}
+    for(var i=0;i<5;i++){
+      var sg=new THREE.Group();sg.position.set(0,0.2+i*0.26,0.02);sg.rotation.x=0.38;g.add(sg);
+      cx(sg,w-0.04,0.012,d-0.08,mat.metal,0,0,0);cx(sg,w-0.04,0.05,0.008,mat.metal,0,0.025,d/2-0.045);
+      for(var k=0;k<3;k++)for(var f=0;f<3;f++){var m=matsProd6[(i*3+k+Math.floor(r()*2))%matsProd6.length],b=cx(sg,0.16,0.19,0.04,m,-w/2+0.12+k*((w-0.24)/2),0.105,d/2-0.09-f*0.09);b.rotation.x=-0.3;}
+    }
+  },
+  painelPerf:function(g,c,r){
+    var zb=-c.d/2,w=c.w;if(!texPeg)texPeg=texFuradoClaro();
+    var m=M(0xffffff,{roughness:0.8}),t=texPeg.clone();t.needsUpdate=true;t.repeat.set(w/0.1,1.5/0.1);m.map=t;
+    cx(g,w,1.5,0.02,m,0,1.2,zb+0.01).userData.matProprio=true;
+    cx(g,w+0.03,0.03,0.03,mat.preto,0,1.965,zb+0.015);cx(g,w+0.03,0.03,0.03,mat.preto,0,0.435,zb+0.015);cx(g,0.03,1.5,0.03,mat.preto,-w/2,1.2,zb+0.015);cx(g,0.03,1.5,0.03,mat.preto,w/2,1.2,zb+0.015);
+    [1.78,1.5,1.22,0.94,0.66].forEach(function(y){
+      for(var x=-w/2+0.1;x<=w/2-0.08;x+=0.135){cx(g,0.006,0.006,0.1,mat.metal,x,y,zb+0.07);
+        var mp=matsProd6[Math.floor(r()*matsProd6.length)];for(var j=0;j<3;j++)cx(g,0.085,0.13,0.012,mp,x,y-0.075,zb+0.045+j*0.026);}
+    });
+  },
+  adega:function(g,c,r,it){
+    var w=c.w,d=c.d,h=c.h,sec=textoPlaca(it,r);
+    cx(g,w,h,0.02,mat.madeira,0,h/2,-d/2+0.01);cx(g,0.03,h,d,mat.madeira,-w/2+0.015,h/2,0);cx(g,0.03,h,d,mat.madeira,w/2-0.015,h/2,0);cx(g,w,0.06,d,mat.preto,0,0.03,0);
+    if(sec){cx(g,w,0.16,0.03,mat.preto,0,h-0.08,d/2-0.015);placa(g,w-0.04,sec,h-0.08,d/2+0.001,0);}
+    for(var i=0;i<5;i++){
+      var y=0.1+i*0.31;cx(g,w-0.06,0.02,d-0.02,mat.madeira,0,y,0);
+      if(i<4)for(var x=-w/2+0.09;x<=w/2-0.08;x+=0.092){var m=r()<0.5?mat.vinhoA:mat.vinhoB;
+        var b=cil(g,0.075,d-0.14,m,x,y+0.05,-0.04);b.rotation.x=Math.PI/2;var n=cil(g,0.03,0.1,m,x,y+0.05,d/2-0.09);n.rotation.x=Math.PI/2;var k=cil(g,0.033,0.03,mat.capsula,x,y+0.05,d/2-0.03);k.rotation.x=Math.PI/2;}
+      else for(var x2=-w/2+0.09;x2<=w/2-0.08;x2+=0.1){var m2=r()<0.5?mat.vinhoA:mat.vinhoB;cil(g,0.075,0.2,m2,x2,y+0.11,0.02);cil(g,0.03,0.08,m2,x2,y+0.25,0.02);cil(g,0.033,0.025,mat.capsula,x2,y+0.3,0.02);cil(g,0.077,0.07,mat.branco,x2,y+0.1,0.02);}
+    }
+  },
+  paes:function(g,c,r,it){
+    var w=c.w,d=c.d,h=c.h,sec=textoPlaca(it,r);
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(q){cx(g,0.03,h-0.1,0.03,mat.preto,q[0]*(w/2-0.015),(h-0.1)/2,q[1]*(d/2-0.015));});
+    if(sec){cx(g,w,0.15,0.03,mat.preto,0,h-0.01,-d/2+0.03);placa(g,w-0.04,sec,h-0.01,-d/2+0.046,0);}
+    [0.3,0.65,1.0].forEach(function(y){
+      var sg=new THREE.Group();sg.position.set(0,y,0);sg.rotation.x=0.28;g.add(sg);
+      cx(sg,w-0.06,0.02,d-0.04,mat.madeira,0,0,0);cx(sg,w-0.06,0.09,0.018,mat.madeira,0,0.045,d/2-0.03);cx(sg,w-0.06,0.09,0.018,mat.madeira,0,0.045,-d/2+0.03);
+      cx(sg,0.018,0.09,d-0.04,mat.madeira,-w/2+0.04,0.045,0);cx(sg,0.018,0.09,d-0.04,mat.madeira,w/2-0.04,0.045,0);
+      for(var k=0;k<4;k++)for(var f=0;f<2;f++){var p=cx(sg,0.17,0.09,0.12,r()<0.65?mat.pao:mat.paoEscuro,-w/2+0.16+k*((w-0.32)/3),0.06,-0.08+f*0.17);p.rotation.y=(r()-0.5)*0.3;}
+    });
+  },
+  ilha:function(g,c,r){
+    var w=c.w,d=c.d,h=c.h;
+    cx(g,w-0.08,0.1,d-0.08,mat.preto,0,0.05,0);cx(g,w,h-0.3,d,mat.branco,0,0.1+(h-0.3)/2,0);cx(g,w+0.01,0.2,d+0.01,mat.prat,0,h-0.1,0);
+    cx(g,w-0.14,0.01,d-0.14,mat.interior,0,h+0.001,0);
+    for(var i=0;i<27;i++){var m=matsProd[Math.floor(r()*matsProd.length)];cx(g,0.15,0.04,0.11,m,-w/2+0.18+(i%9)*((w-0.36)/8),h+0.025,-0.22+Math.floor(i/9)*0.22);}
+    cx(g,w/2,0.01,d-0.08,mat.vidro,-w/4+0.03,h+0.06,0);cx(g,w/2,0.01,d-0.08,mat.vidro,w/4-0.03,h+0.072,0);
+    [1,-1].forEach(function(sz){var f=new THREE.Mesh(geoPlano,matTxt('CONGELADOS','#1f4fb3','#ffffff',512,96,56));f.scale.set(w*0.6,w*0.6*96/512,1);f.position.set(0,h*0.42,sz*(d/2+0.003));f.rotation.y=sz>0?0:Math.PI;f.userData.semSombra=true;g.add(f);});
+  },
+  carvao:function(g,c,r){
+    var w=c.w,d=c.d,h=c.h;
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(q){cx(g,0.03,h,0.03,mat.metalPreto,q[0]*(w/2-0.015),h/2,q[1]*(d/2-0.015));});
+    [0.12,0.66].forEach(function(y){
+      cx(g,w,0.03,d,mat.metalPreto,0,y,0);
+      for(var k=0;k<2;k++)for(var n=0;n<3;n++){var x=(k?1:-1)*(w/4-0.005);cx(g,w/2-0.07,0.13,d-0.1,mat.saco,x,y+0.08+n*0.135,0);
+        if(n===2){var f=new THREE.Mesh(geoPlano,matTxt('CARVÃO','#8a1c12','#ffffff',128,40,24));f.scale.set(w/2-0.14,0.085,1);f.position.set(x,y+0.08+n*0.135,d/2-0.048);f.userData.semSombra=true;g.add(f);}}
+    });
+  },
   cafe:function(g,c){
     var w=c.w,d=c.d,h=c.h;
     cx(g,w,h-0.04,d,mat.madeira,0,(h-0.04)/2,0);
@@ -908,6 +1043,7 @@ var ELET={
   geladeira:{alt:0.3,obs:'Refrigeração'},cervejeira:{alt:0.3,obs:'Refrigeração'},freezer:{alt:0.3,obs:'Refrigeração'},
   checkout:{alt:0.3,rede:1,obs:'Totem de pagamento, embaixo do balcão'},totem:{alt:0.3,rede:1,obs:'Totem de pagamento'},totemParede:{alt:1.0,rede:1,obs:'Totem de pagamento, escondida atrás dele'},
   ar:{alt:'alto',obs:'Ar-condicionado, ponto dedicado'},camera:{alt:'alto',rede:1,obs:'Câmera de segurança'},cafe:{alt:1.1,obs:'Máquina de café, acima da bancada'},
+  ilha:{alt:0.3,obs:'Refrigeração'},
   estante:{alt:0.3,led:1,obs:'LED das prateleiras'},gondola:{alt:0.3,led:1,obs:'LED das prateleiras'}
 };
 var NOME_PAREDE=['fundo','esquerda','frente','direita'];
@@ -946,7 +1082,7 @@ function listaTomadas(){
 }
 // dá para uma pessoa entrar e chegar na frente de cada equipamento?
 // simula um corpo de 60 cm (mínimo) e de 90 cm (confortável) andando a partir da porta
-var FRENTE={estante:1,gondolaMetal:1,geladeira:1,cervejeira:1,freezer:1,checkout:1,totem:1,totemParede:1,cafe:1,gondola:2,gondolaMetalC:2};
+var FRENTE={pontaMetal:1,gondolaCanto:1,salgadinho:1,painelPerf:1,adega:1,paes:1,ilha:2,carvao:1,estante:1,gondolaMetal:1,geladeira:1,cervejeira:1,freezer:1,checkout:1,totem:1,totemParede:1,cafe:1,gondola:2,gondolaMetalC:2};
 var acesso={sem:[],apertado:[],porta:false};
 function alcance(r){
   var st=0.05,L2=estado.L/2,P2=estado.P/2,nx=Math.round(estado.L/st)+1,nz=Math.round(estado.P/st)+1,ok=new Uint8Array(nx*nz),vis=new Uint8Array(nx*nz),i,j,q;
@@ -1280,6 +1416,7 @@ var arr=null;
 cv.addEventListener('pointerdown',function(e){
   try{cv.setPointerCapture(e.pointerId);}catch(x){}
   if(modo==='planta'){
+    if(soVer)return;
     var it=pegar(e);selecionar(it);
     if(it){var p=noChao(e);if(p)arr={k:'item',it:it,dx:it.x-p.x,dz:it.z-p.z};}
     else{var pc=noChao(e);if(pc)estado.portas.forEach(function(pt,i){ // clicou numa porta ou vitrine: mostra o cartão dela no painel
@@ -1341,6 +1478,56 @@ function andar(dt){
 }
 
 // ---------- painel ----------
+// monta um layout sozinho: refrigeração numa lateral, estantes no fundo e na outra lateral, gôndola no meio se couber, checkout perto da entrada
+function naPorta(it){
+  var L2=estado.L/2,P2=estado.P/2,h=meiaPegada(it);
+  return estado.portas.some(function(p){var k=KP[p.parede],pp=portaPos(p),w=portaLarg(p)/2+0.1,f=1.0,x0,x1,z0,z1;
+    if(k%2===0){x0=pp-w;x1=pp+w;if(k===0){z0=-P2;z1=-P2+f;}else{z0=P2-f;z1=P2;}}else{z0=pp-w;z1=pp+w;if(k===1){x0=-L2;x1=-L2+f;}else{x0=L2-f;x1=L2;}}
+    return it.x+h[0]>x0&&it.x-h[0]<x1&&it.z+h[1]>z0&&it.z-h[1]<z1;});
+}
+function layoutAuto(){
+  var L2=estado.L/2,P2=estado.P/2,k0=KP[entradas()[0].parede],kF=(k0+2)%4,kA=(k0+1)%4,kB=(k0+3)%4,nsec=0;
+  estado.itens=[];
+  function novo(tipo,extra){var c=CATALOGO[tipo],it={tipo:tipo,x:0,z:0,rot:0};(c.ops||[]).forEach(function(op){it[op.campo]=Object.keys(op.valores)[0];});
+    if(c.placa)it.txt=c.txtPadrao!==undefined?c.txtPadrao:(c.semPlaca?'':SECOES[nsec++%SECOES.length]);for(var q in (extra||{}))it[q]=extra[q];return it;}
+  // encosta "it" na parede k com o centro na coordenada c ao longo dela; devolve se coube
+  function poe(it,k,c){it.rot=k;var h=meiaPegada(it);
+    if(k===0){it.x=c;it.z=-P2+h[1];}else if(k===2){it.x=c;it.z=P2-h[1];}else if(k===1){it.x=-L2+h[0];it.z=c;}else{it.x=L2-h[0];it.z=c;}
+    var m=(k%2===0?h[0]:h[1]),lim=(k%2===0?L2:P2);if(Math.abs(c)+m>lim+0.001)return false;
+    estado.itens.push(it);if(colide(it)||(classe(it)==='chao'&&naPorta(it))){estado.itens.pop();return false;}return true;}
+  // enfileira itens ao longo da parede k, começando do lado da parede "de" (ex.: do fundo para a frente)
+  function fila(k,de,lista,reserva){
+    var comp=(k%2===0?estado.L:estado.P),sinal=(function(){if(k%2===0)return (de===1?1:-1);return (de===0?1:-1);})(),c=-sinal*comp/2,fim=sinal*comp/2-sinal*(reserva||0),i=0;
+    while(i<lista.length&&sinal*(fim-c)>0.2){var it=lista[i],hw=(function(){it.rot=k;var h=meiaPegada(it);return k%2===0?h[0]:h[1];})();
+      if(sinal*(fim-(c+sinal*2*hw))<-0.001){i++;continue;}
+      if(poe(it,k,c+sinal*hw)){c+=sinal*(2*hw+0.02);i++;}else c+=sinal*0.05;}
+  }
+  var area=estado.L*estado.P,compA=(kA%2===0?estado.L:estado.P),compF=(kF%2===0?estado.L:estado.P);
+  var refr=[novo('geladeira',{mod:area>=12&&compA>=3.4?'g326':'vrs16'}),novo('cervejeira'),novo('freezer')];
+  if(area<8)refr.pop();
+  fila(kA,kF,refr,1.0);
+  var est=[];for(var i=0;i<12;i++)est.push(novo('estante'));
+  fila(kF,kB,est);
+  fila(kB,kF,est.filter(function(e){return estado.itens.indexOf(e)<0;}),1.5);
+  // gôndola central só se sobrar corredor de 90 cm dos dois lados
+  var g=novo('gondolaMetalC');estado.itens.push(g);var achou=false;
+  [0,1].forEach(function(rt){if(achou)return;g.rot=rt;g.x=0;g.z=0;var h=meiaPegada(g),ok=!colide(g)&&!naPorta(g);
+    if(ok)estado.itens.forEach(function(o){if(o===g||classe(o)!=='chao')return;var ho=meiaPegada(o),gx=Math.abs(g.x-o.x)-h[0]-ho[0],gz=Math.abs(g.z-o.z)-h[1]-ho[1];if(Math.max(gx,gz)<0.9)ok=false;});
+    if(ok&&(L2-h[0]<0.9||P2-h[1]<0.9))ok=false;achou=ok;});
+  if(!achou)estado.itens.pop();
+  // checkout na parede da entrada, senão totem na parede
+  var ck=novo('checkout'),posto=false,compE=(k0%2===0?estado.L:estado.P);
+  for(var c2=-compE/2+0.6;c2<=compE/2-0.6&&!posto;c2+=0.1){ck.rot=k0;var hk=meiaPegada(ck);
+    if(k0===0){ck.x=c2;ck.z=-P2+hk[1];}else if(k0===2){ck.x=c2;ck.z=P2-hk[1];}else if(k0===1){ck.x=-L2+hk[0];ck.z=c2;}else{ck.x=L2-hk[0];ck.z=c2;}
+    estado.itens.push(ck);var bate=colide(ck)||estado.portas.some(function(p){if(KP[p.parede]!==k0)return false;return Math.abs(c2-portaPos(p))<portaLarg(p)/2+0.6+0.25;});
+    if(bate)estado.itens.pop();else posto=true;}
+  if(!posto){var tp=novo('totemParede');tp.x=(kB===1?-L2:kB===3?L2:0);tp.z=(kB===0?-P2:kB===2?P2:0);estado.itens.push(tp);if(!acharVaga(tp,tp.x,tp.z))estado.itens.pop();}
+  // itens de parede e pequenos
+  [['ar',kB],['camera',k0],['quadro',k0],['lixeira',k0]].forEach(function(q){var it=novo(q[0]);estado.itens.push(it);
+    var px=(q[1]===1?-L2:q[1]===3?L2:(q[0]==='camera'?L2:-L2)),pz=(q[1]===0?-P2:q[1]===2?P2:0);if(!acharVaga(it,px,pz))estado.itens.pop();});
+  // tira o que ficou sem acesso
+  for(var n=0;n<4;n++){analisar();if(!acesso.sem.length)break;var rem=acesso.sem[acesso.sem.length-1];estado.itens.splice(estado.itens.indexOf(rem),1);}
+}
 function reconstruir(mudouTamanho){
   var s=selecionado;
   if(s&&mudouTamanho){var ox=s.x,oz=s.z;prender(s);if(colide(s))acharVaga(s,ox,oz);}
@@ -1373,7 +1560,7 @@ function girar(){
 function remover(){if(!selecionado)return;estado.itens.splice(estado.itens.indexOf(selecionado),1);selecionar(null);refazerItens();resumo();salvar();}
 function adicionar(tipo,base){
   var c=CATALOGO[tipo],it={tipo:tipo,x:0,z:0,rot:base?base.rot:0};
-  if(c.placa)it.txt=base?base.txt:(c.semPlaca?'':SECOES[estado.itens.filter(function(i){return CATALOGO[i.tipo].placa;}).length%SECOES.length]);
+  if(c.placa)it.txt=base?base.txt:(c.txtPadrao!==undefined?c.txtPadrao:c.semPlaca?'':SECOES[estado.itens.filter(function(i){return CATALOGO[i.tipo].placa;}).length%SECOES.length]);
   (c.ops||[]).forEach(function(op){it[op.campo]=(base&&base[op.campo])||Object.keys(op.valores)[0];});
   estado.itens.push(it);
   if(!acharVaga(it,base?base.x:0,base?base.z:estado.P/2-0.9)){estado.itens.pop();alert('Não há espaço livre para colocar este item. Remova ou afaste algum equipamento, ou aumente as medidas do espaço.');return;}
@@ -1381,6 +1568,7 @@ function adicionar(tipo,base){
   if(modo!=='planta')setModo('planta');
 }
 $('bDesfazer').onclick=desfazer;
+$('bAuto').onclick=function(){if(estado.itens.length&&!confirm('Vou trocar os equipamentos atuais por um layout sugerido para este espaço. Paredes, portas e cores ficam como estão. Dá para voltar com Desfazer. Continuar?'))return;layoutAuto();selecionar(null);refazerItens();resumo();salvar();setModo('planta');};
 $('bGirar').onclick=girar;$('bRemover').onclick=remover;
 $('bDuplicar').onclick=function(){if(selecionado)adicionar(selecionado.tipo,selecionado);};
 Object.keys(CATALOGO).forEach(function(t){
@@ -1410,7 +1598,7 @@ function resumo(){
   else if(acesso.sem.length){h+='<span class="aviso">SEM PASSAGEM: uma pessoa não consegue chegar na frente de '+acesso.sem.length+' item(ns): '+esc(lista(acesso.sem))+'. O caminho tem menos de 60 cm. Marcados em vermelho na planta.</span><br>';al.hidden=false;al.className='';al.textContent='⚠ Sem passagem para uma pessoa chegar em: '+lista(acesso.sem)+' (caminho com menos de 60 cm).';}
   else al.hidden=true;
   if(acesso.apertado.length&&!acesso.porta)h+='<span class="atencao">Passagem apertada (entre 60 e 90 cm, passa uma pessoa mas sem folga) para chegar em: '+esc(lista(acesso.apertado))+'.</span><br>';
-  var cob=cobertura(),nRef=estado.itens.filter(function(i){return i.tipo==='geladeira'||i.tipo==='cervejeira'||i.tipo==='freezer';}).length,temAr=estado.itens.some(function(i){return i.tipo==='ar';});
+  var cob=cobertura(),nRef=estado.itens.filter(function(i){return i.tipo==='geladeira'||i.tipo==='cervejeira'||i.tipo==='freezer'||i.tipo==='ilha';}).length,temAr=estado.itens.some(function(i){return i.tipo==='ar';});
   if(cob===null)h+='<span class="atencao">Nenhuma câmera de segurança no projeto.</span><br>';
   else h+='<span class="'+(cob<70?'aviso':'')+'">Câmeras enxergam cerca de '+cob+'% do piso'+(cob<70?' (ponto cego grande: mude a posição ou adicione outra)':'')+'.</span><br>';
   if(nRef>=2&&!temAr)h+='<span class="atencao">'+nRef+' equipamentos de refrigeração e nenhum ar-condicionado: eles jogam calor dentro da loja.</span><br>';
@@ -1527,7 +1715,7 @@ $('fLed').addEventListener('change',function(){estado.luz.led=this.checked;sala(
 });
 function baixar(nome,url){var a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();}
 function slug(){return (estado.nome.trim()||'loja').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'loja';}
-$('bFoto').onclick=function(){desenhar();baixar('projeto-'+slug()+'-'+modo+'.png',cv.toDataURL('image/png'));};
+$('bFoto').onclick=function(){desenhar();baixar('projeto-'+slug()+'-'+modo+'.png',exporta('image/png'));};
 
 // ---------- foto por IA ----------
 // lista o que aparece na vista, da esquerda para a direita, para a IA não mudar nada de lugar
@@ -1575,9 +1763,23 @@ function iaTela(msg,carregando,img,par){
   $('ia').style.display='flex';$('iaMsg').textContent=msg;$('iaGira').style.display=carregando?'block':'none';
   $('iaPar').hidden=!img;$('iaAbrir').hidden=!img;$('iaBaixar').hidden=!img;$('iaFechar').hidden=carregando;
   $('iaDeNovo').hidden=carregando||!par;$('iaFig3d').style.display=par?'flex':'none';
+  $('iaVideo').hidden=true;try{$('iaVideo').pause();}catch(e){}
+  $('iaVid').hidden=carregando||!par||temGerador===false;if(par&&img)ultimaFoto=img;
   if(img){$('iaImg').src=img;$('iaAbrir').href=img;$('iaBaixar').href=img;$('iaBaixar').download='loja-'+slug()+(/\.jpg$/.test(img)?'.jpg':'.png');if(par&&ultimo3d)$('iaImg3d').src=ultimo3d;}
 }
-$('iaFechar').onclick=function(){$('ia').style.display='none';};
+$('iaFechar').onclick=function(){try{$('iaVideo').pause();}catch(e){}$('ia').style.display='none';};
+var ultimaFoto=null;
+$('iaVid').onclick=function(){
+  if(!ultimaFoto||semGerador())return;
+  if(!confirm('Vou transformar esta foto num vídeo curto (5 segundos) andando pela loja. Leva de 2 a 5 minutos e gasta créditos do Higgsfield (bem mais que uma foto). Continuar?'))return;
+  iaTela('Gerando o vídeo. Leva de 2 a 5 minutos, não feche a página.',true);
+  fetch('api/video?f='+encodeURIComponent(ultimaFoto),{method:'POST',body:'x'}).then(function(r){return r.json();}).then(function(j){
+    if(!j.ok){iaTela('Não deu certo: '+(j.erro||'erro desconhecido'),false);return;}
+    iaTela('Vídeo pronto. Ficou salvo na pasta "renders" do projeto.',false);
+    var v=$('iaVideo');v.src=j.arquivo;v.hidden=false;v.play().catch(function(){});
+    $('iaAbrir').hidden=false;$('iaAbrir').href=j.arquivo;$('iaBaixar').hidden=false;$('iaBaixar').href=j.arquivo;$('iaBaixar').download='video-'+slug()+'.mp4';
+  }).catch(function(){iaTela('Não consegui falar com o gerador.',false);});
+};
 function fotoIA(){ // fotografa a vista atual; devolve Promise com a resposta do gerador
   desenhar();var inv=inventario();
   return new Promise(function(res){cv.toBlob(function(b){
@@ -1717,7 +1919,7 @@ function plantaEletrica(){
   var h='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Planta elétrica '+esc(estado.condominio||estado.nome)+'</title><style>'+
     'body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:#111;margin:0 auto;padding:24px;max-width:1100px}h1{font-size:22px;margin:0}.sub{color:#555;font-size:13px;margin:4px 0 10px}svg{width:100%;height:auto;border:1px solid #ccc;background:#fff}'+
     'table{border-collapse:collapse;width:100%;font-size:13px;margin-top:14px}td,th{border:1px solid #bbb;padding:5px 8px;text-align:left}th{background:#eee}.leg{font-size:13px;margin-top:12px;line-height:1.7}.leg span{display:inline-block;margin-right:18px}.nota{font-size:12px;color:#444;margin-top:12px}'+
-    'button{font-size:15px;padding:9px 16px;margin-bottom:14px;cursor:pointer}@media print{button{display:none}body{padding:0}@page{size:A4 landscape;margin:10mm}}</style></head><body>'+
+    'button{font-size:15px;padding:9px 16px;margin-bottom:14px;cursor:pointer}@media print{button{display:none}body{padding:0}@page{size:A4 landscape;margin:10mm}}</style>'+marcaCSS()+'</head><body>'+marcaHTML()+''+
     '<button onclick="window.print()">Salvar como PDF / Imprimir</button><h1>Planta elétrica: pontos de tomada e internet</h1>'+
     '<div class="sub">'+esc(estado.nome)+(estado.condominio?' · '+esc(estado.condominio):'')+' · '+new Date().toLocaleDateString('pt-BR')+' · medidas em metros · '+ts.length+' tomadas, '+ts.filter(function(t){return t.rede;}).length+' pontos de internet</div>'+
     '<svg viewBox="0 0 '+W.toFixed(0)+' '+H.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg" font-family="Arial,sans-serif">'+o.join('')+'</svg>'+
@@ -1732,7 +1934,7 @@ var fotosIA=[];
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
 function capturar(m){
   var mo=modo,sel=selecionado,a={x:and.x,z:and.z,yaw:and.yaw,pitch:and.pitch};
-  selecionado=null;setModo(m);desenhar();var u=cv.toDataURL('image/jpeg',0.88);
+  selecionado=null;setModo(m);desenhar();var u=exporta('image/jpeg',0.88);
   setModo(mo);and.x=a.x;and.z=a.z;and.yaw=a.yaw;and.pitch=a.pitch;selecionado=sel;marcar();desenhar();return u;
 }
 function proposta(){
@@ -1744,7 +1946,7 @@ function proposta(){
     '.topo{display:flex;align-items:center;gap:18px;border-bottom:4px solid '+estado.cor+';padding-bottom:14px}.topo img{max-height:70px;max-width:220px}.sub{color:#555;font-size:14px;margin-top:4px}'+
     'img{max-width:100%;border-radius:6px}.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid #ddd;padding:7px 8px;text-align:left}th{background:#f3f3f1}'+
     '.fotos img{margin-bottom:12px}.nota{font-size:12px;color:#666;margin-top:22px}button{font-size:15px;padding:10px 18px;margin-bottom:18px;cursor:pointer}@media print{button{display:none}body{padding:0}h2{break-after:avoid}img{break-inside:avoid}}'+
-    '</style></head><body><button onclick="window.print()">Salvar como PDF / Imprimir</button>'+
+    '</style>'+marcaCSS()+'</head><body>'+marcaHTML()+'<button onclick="window.print()">Salvar como PDF / Imprimir</button>'+
     '<div class="topo">'+(estado.logo?'<img src="'+estado.logo+'">':'')+'<div><h1>'+esc(estado.nome)+'</h1><div class="sub">Proposta de minimercado autônomo'+(estado.condominio?' para '+esc(estado.condominio):'')+' · '+hoje+'</div></div></div>'+
     '<h2>O espaço</h2><p>Área de '+(estado.L*estado.P).toFixed(1).replace('.',',')+' m² ('+m2(estado.L)+' de largura × '+m2(estado.P)+' de fundo, pé-direito de '+m2(estado.A)+'). '+portas+' porta(s) refrigerada(s).</p>'+
     '<h2>Planta</h2><img src="'+capturar('planta')+'">'+
@@ -1758,6 +1960,14 @@ function proposta(){
   abrirPagina(h,'proposta-'+slug());
 }
 $('bPDF').onclick=proposta;
+$('bLink').onclick=function(){
+  linkSindico().then(function(u){
+    var msg='Link pronto'+(comMarca()?' (versão grátis: abre com marca d\'água)':'')+'. Quem abrir vê a loja em 3D e anda por ela, sem poder mexer. O logo não vai no link.';
+    if(navigator.share&&/Mobi|Android|iPhone/i.test(navigator.userAgent)){navigator.share({title:'Projeto da loja'+(estado.condominio?' - '+estado.condominio:''),url:u}).catch(function(){});return;}
+    var ok=function(){prompt(msg+'\n\nJá copiei. Se precisar, copie daqui:',u);},falha=function(){prompt(msg+'\n\nCopie o endereço abaixo:',u);};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(ok,falha);else falha();
+  });
+};
 $('bSalvar').onclick=function(){var u=URL.createObjectURL(new Blob([JSON.stringify(estado,null,1)],{type:'application/json'}));baixar('projeto-'+slug()+'.json',u);setTimeout(function(){URL.revokeObjectURL(u);},2000);};
 $('bAbrir').onclick=function(){$('fArq').click();};
 $('fArq').addEventListener('change',function(){
@@ -1791,8 +2001,21 @@ function quadro(t){
   if(modo==='andar')andar(dt);
   desenhar();requestAnimationFrame(quadro);
 }
-tudo();setModo('planta');requestAnimationFrame(quadro);
-window.__loja={recorteRet:recorteRet,orbF:orbF,modeloContainer:modeloContainer,vistasPadrao:vistasPadrao,pontosLuz:pontosLuz,interruptor:interruptor,desfazer:desfazer,cobertura:cobertura,pilha:function(){return pilha.length;},plantaEletrica:plantaEletrica,acesso:function(){return acesso;},tomadas:tomadas,D:D,estreitos:estreitos,proposta:proposta,capturar:capturar,contagem:contagem,estado:function(){return estado;},and:and,orb:orb,setModo:setModo,tecla:tecla,desenhar:desenhar,inventario:inventario,colide:colide,mover:mover,adicionar:adicionar,selecionar:selecionar,girar:girar,refazer:tudo};
+function aplicaMarca(){
+  $('marca').style.display=comMarca()?'block':'none';$('marca').style.backgroundImage=comMarca()?marcaURI(true):'none';
+  $('gratis').style.display=(!PRO&&!soVer)?'block':'none';
+}
+tudo();setModo('planta');aplicaMarca();requestAnimationFrame(quadro);
+if(soVer){
+  document.body.classList.add('ver');$('verCta').href=PUBLICO;
+  descompactar(location.hash.slice(5)).then(function(t){
+    var bruto=JSON.parse(t),o=validar(bruto);if(!o)throw 0;
+    estado=o;verPro=!!bruto.pro;$('verNome').textContent=o.nome.trim()||'Projeto da loja';$('verCond').textContent=o.condominio?o.condominio:'';
+    tudo();setModo(o.espaco.tipo!=='sala'?'fora':'orbita');aplicaMarca();ajustar();
+    dica('Arraste para girar. Use os botões acima para andar pela loja.');
+  }).catch(function(){soVer=false;document.body.classList.remove('ver');aplicaMarca();alert('Este link de projeto está incompleto ou foi cortado. Peça para enviarem de novo.');});
+}
+window.__loja={linkSindico:linkSindico,exporta:exporta,comMarca:comMarca,layoutAuto:layoutAuto,recorteRet:recorteRet,orbF:orbF,modeloContainer:modeloContainer,vistasPadrao:vistasPadrao,pontosLuz:pontosLuz,interruptor:interruptor,desfazer:desfazer,cobertura:cobertura,pilha:function(){return pilha.length;},plantaEletrica:plantaEletrica,acesso:function(){return acesso;},tomadas:tomadas,D:D,estreitos:estreitos,proposta:proposta,capturar:capturar,contagem:contagem,estado:function(){return estado;},and:and,orb:orb,setModo:setModo,tecla:tecla,desenhar:desenhar,inventario:inventario,colide:colide,mover:mover,adicionar:adicionar,selecionar:selecionar,girar:girar,refazer:tudo};
 })();
 </script>
 </body>
